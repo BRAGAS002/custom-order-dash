@@ -9,13 +9,13 @@ export const Header = () => {
         <Link to="/" className="flex items-center gap-2">
           <Store className="h-6 w-6 text-primary" />
           <span className="text-xl font-bold gradient-primary bg-clip-text text-transparent">
-            OrderFlow
+            UniPrint
           </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
           <Link to="/enterprises" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
-            Browse
+            Printing Shops
           </Link>
           <Link to="/orders" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
             My Orders

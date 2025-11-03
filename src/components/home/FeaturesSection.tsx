@@ -1,21 +1,21 @@
-import { Sparkles, Package, TrendingUp } from "lucide-react";
+import { Sparkles, MessageSquare, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const features = [
   {
     icon: Sparkles,
-    title: "Fully Customizable",
-    description: "Every product can be tailored to your exact preferences. Choose sizes, options, colors, and add special instructions.",
+    title: "AI-Powered Design Tools",
+    description: "Generate custom designs with our built-in AI image generation tool. Create professional prints without design experience.",
   },
   {
-    icon: Package,
-    title: "Real-Time Tracking",
-    description: "Know exactly where your order is at every step. From kitchen to doorstep, stay informed with live updates.",
+    icon: MessageSquare,
+    title: "Smart Chatbot Support",
+    description: "Get instant answers to your questions with our AI chatbot. Real-time assistance for orders, pricing, and specifications.",
   },
   {
     icon: TrendingUp,
-    title: "Support Local",
-    description: "Every order supports local businesses in your community. Discover hidden gems and favorites near you.",
+    title: "Real-Time Job Tracking",
+    description: "Track your print jobs from order placement to completion with automated status updates and invoicing.",
   },
 ];
 
@@ -24,9 +24,9 @@ export const FeaturesSection = () => {
     <section className="py-20 bg-secondary/30">
       <div className="container">
         <div className="text-center mb-12">
-          <h2 className="mb-4">Why Choose OrderFlow</h2>
+          <h2 className="mb-4">AI-Enhanced Printing Platform</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Experience a new way to order from local businesses with powerful features designed for you
+            UniPrint combines traditional printing services with cutting-edge AI technology to streamline operations and enhance customer experience
           </p>
         </div>
 

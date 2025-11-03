@@ -11,35 +11,45 @@ import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-// Mock product data
+// Mock product data for printing services
 const mockProduct = {
   id: 1,
-  name: "Margherita Pizza",
-  description: "Classic Italian pizza with fresh mozzarella, tomato sauce, and basil",
-  basePrice: 14.99,
-  enterpriseName: "Bella Italia Pizzeria",
+  name: "Business Cards",
+  description: "Professional business cards printed on premium cardstock with your custom design",
+  basePrice: 500.00,
+  enterpriseName: "Baguio Print Express",
   customizationGroups: [
     {
       id: 1,
-      name: "Choose Size",
+      name: "Paper Type",
       type: "Single Select",
       isRequired: true,
       options: [
-        { id: 1, name: "Small (10\")", priceModifier: 0 },
-        { id: 2, name: "Medium (12\")", priceModifier: 3 },
-        { id: 3, name: "Large (14\")", priceModifier: 6 },
+        { id: 1, name: "Standard (300gsm)", priceModifier: 0 },
+        { id: 2, name: "Premium (350gsm)", priceModifier: 150 },
+        { id: 3, name: "Luxury (400gsm)", priceModifier: 300 },
       ],
     },
     {
       id: 2,
-      name: "Extra Toppings",
+      name: "Finish",
+      type: "Single Select",
+      isRequired: true,
+      options: [
+        { id: 4, name: "Matte", priceModifier: 0 },
+        { id: 5, name: "Glossy", priceModifier: 50 },
+        { id: 6, name: "UV Coating", priceModifier: 100 },
+      ],
+    },
+    {
+      id: 3,
+      name: "Additional Features",
       type: "Multi Select",
       isRequired: false,
       options: [
-        { id: 4, name: "Extra Cheese", priceModifier: 2 },
-        { id: 5, name: "Mushrooms", priceModifier: 1.5 },
-        { id: 6, name: "Olives", priceModifier: 1.5 },
-        { id: 7, name: "Bell Peppers", priceModifier: 1.5 },
+        { id: 7, name: "Rounded Corners", priceModifier: 50 },
+        { id: 8, name: "Embossing", priceModifier: 200 },
+        { id: 9, name: "Foil Stamping", priceModifier: 300 },
       ],
     },
   ],
@@ -193,7 +203,7 @@ export default function ProductDetail() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="Any special requests or dietary restrictions?"
+                  placeholder="Special instructions for your print job (e.g., design preferences, delivery notes)"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}

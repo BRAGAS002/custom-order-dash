@@ -11,47 +11,57 @@ import { Link } from "react-router-dom";
 const mockEnterprises = [
   {
     id: 1,
-    name: "Bella Italia Pizzeria",
-    category: "Restaurant",
-    address: "123 Main St",
-    rating: 4.8,
-    reviews: 245,
-    deliveryTime: "25-35 min",
+    name: "Baguio Print Express",
+    category: "Digital Printing",
+    address: "Session Road, Baguio City",
+    rating: 4.9,
+    reviews: 428,
+    deliveryTime: "Same day",
     isActive: true,
   },
   {
     id: 2,
-    name: "Fresh Bites Cafe",
-    category: "Restaurant",
-    address: "456 Oak Ave",
-    rating: 4.6,
-    reviews: 189,
-    deliveryTime: "20-30 min",
-    isActive: true,
-  },
-  {
-    id: 3,
-    name: "Tech Haven Store",
-    category: "Retail",
-    address: "789 Tech Blvd",
-    rating: 4.9,
-    reviews: 312,
+    name: "City Printing Services",
+    category: "Commercial Printing",
+    address: "Harrison Road, Baguio City",
+    rating: 4.8,
+    reviews: 356,
     deliveryTime: "1-2 days",
     isActive: true,
   },
   {
-    id: 4,
-    name: "Green Leaf Grocers",
-    category: "Retail",
-    address: "321 Garden Rd",
+    id: 3,
+    name: "FastPrint Baguio",
+    category: "Digital Printing",
+    address: "Magsaysay Avenue, Baguio City",
     rating: 4.7,
-    reviews: 178,
+    reviews: 289,
+    deliveryTime: "Same day",
+    isActive: true,
+  },
+  {
+    id: 4,
+    name: "Premium Print Solutions",
+    category: "Commercial Printing",
+    address: "Upper Session Road, Baguio City",
+    rating: 4.9,
+    reviews: 512,
+    deliveryTime: "2-3 days",
+    isActive: true,
+  },
+  {
+    id: 5,
+    name: "Quick Copy Center",
+    category: "Copy & Print",
+    address: "Bonifacio Street, Baguio City",
+    rating: 4.6,
+    reviews: 203,
     deliveryTime: "Same day",
     isActive: true,
   },
 ];
 
-const categories = ["All", "Restaurant", "Retail", "Service"];
+const categories = ["All", "Digital Printing", "Commercial Printing", "Copy & Print"];
 
 export default function Enterprises() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,16 +79,16 @@ export default function Enterprises() {
       
       <main className="container py-8">
         <div className="mb-8">
-          <h1 className="mb-4">Browse Businesses</h1>
+          <h1 className="mb-4">Printing Shops in Baguio</h1>
           <p className="text-lg text-muted-foreground mb-6">
-            Discover local businesses and order your favorites
+            Find the perfect printing shop for your needs with AI-enhanced ordering
           </p>
 
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="Search for businesses..."
+                placeholder="Search for printing shops..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -137,7 +147,7 @@ export default function Enterprises() {
               <CardFooter>
                 <Button variant="default" className="w-full" asChild>
                   <Link to={`/enterprises/${enterprise.id}`}>
-                    View Menu
+                    View Products
                   </Link>
                 </Button>
               </CardFooter>
@@ -147,7 +157,7 @@ export default function Enterprises() {
 
         {filteredEnterprises.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">No businesses found matching your criteria</p>
+            <p className="text-lg text-muted-foreground">No printing shops found matching your criteria</p>
           </div>
         )}
       </main>

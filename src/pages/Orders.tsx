@@ -5,38 +5,40 @@ import { Button } from "@/components/ui/button";
 import { Package, Clock, CheckCircle2, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 
-// Mock order data
+// Mock order data for print jobs
 const mockOrders = [
   {
     id: 1,
-    enterpriseName: "Bella Italia Pizzeria",
+    enterpriseName: "Baguio Print Express",
     orderDate: "2025-01-15 14:30",
-    totalAmount: 32.47,
+    totalAmount: 850.00,
     currentStatus: "In Progress",
     items: [
-      { name: "Margherita Pizza", quantity: 2, subtotal: 29.98 },
+      { name: "Business Cards (500pcs) - Premium 350gsm, Glossy", quantity: 1, subtotal: 850.00 },
     ],
     statusHistory: [
       { status: "Order Placed", timestamp: "2025-01-15 14:30" },
       { status: "Payment Confirmed", timestamp: "2025-01-15 14:31" },
-      { status: "Kitchen Started", timestamp: "2025-01-15 14:35" },
+      { status: "Design Review", timestamp: "2025-01-15 14:45" },
+      { status: "Printing Started", timestamp: "2025-01-15 15:00" },
     ],
   },
   {
     id: 2,
-    enterpriseName: "Fresh Bites Cafe",
-    orderDate: "2025-01-14 12:15",
-    totalAmount: 18.50,
+    enterpriseName: "City Printing Services",
+    orderDate: "2025-01-14 10:15",
+    totalAmount: 2500.00,
     currentStatus: "Complete",
     items: [
-      { name: "Avocado Toast", quantity: 1, subtotal: 12.00 },
-      { name: "Latte", quantity: 1, subtotal: 6.50 },
+      { name: "Tarpaulin Banner (6x4ft) - Full Color", quantity: 2, subtotal: 2000.00 },
+      { name: "Flyers (A5, 1000pcs)", quantity: 1, subtotal: 500.00 },
     ],
     statusHistory: [
-      { status: "Order Placed", timestamp: "2025-01-14 12:15" },
-      { status: "Preparing", timestamp: "2025-01-14 12:20" },
-      { status: "Ready for Pickup", timestamp: "2025-01-14 12:35" },
-      { status: "Complete", timestamp: "2025-01-14 12:45" },
+      { status: "Order Placed", timestamp: "2025-01-14 10:15" },
+      { status: "Design Approved", timestamp: "2025-01-14 10:30" },
+      { status: "Printing Complete", timestamp: "2025-01-14 14:00" },
+      { status: "Ready for Pickup", timestamp: "2025-01-14 15:30" },
+      { status: "Complete", timestamp: "2025-01-14 16:45" },
     ],
   },
 ];
@@ -55,8 +57,8 @@ export default function Orders() {
       
       <main className="container py-8">
         <div className="mb-8">
-          <h1 className="mb-2">My Orders</h1>
-          <p className="text-muted-foreground">Track and manage your order history</p>
+          <h1 className="mb-2">My Print Jobs</h1>
+          <p className="text-muted-foreground">Track your printing orders with real-time status updates</p>
         </div>
 
         <div className="space-y-6">
@@ -139,10 +141,10 @@ export default function Orders() {
           <Card className="text-center py-12">
             <CardContent>
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">No orders yet</h3>
-              <p className="text-muted-foreground mb-6">Start browsing businesses to place your first order</p>
+              <h3 className="text-xl font-bold mb-2">No print jobs yet</h3>
+              <p className="text-muted-foreground mb-6">Start browsing printing shops to place your first order</p>
               <Button variant="hero" asChild>
-                <Link to="/enterprises">Browse Businesses</Link>
+                <Link to="/enterprises">Browse Printing Shops</Link>
               </Button>
             </CardContent>
           </Card>
