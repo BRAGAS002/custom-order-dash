@@ -1,12 +1,6 @@
-import { ShoppingCart, User, Store, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, User, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 export const Header = () => {
   return (
@@ -26,27 +20,6 @@ export const Header = () => {
           <Link to="/orders" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
             My Orders
           </Link>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <LayoutDashboard className="h-4 w-4" />
-                Dashboards
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/admin" className="cursor-pointer">
-                  Admin Dashboard
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/business" className="cursor-pointer">
-                  Business Dashboard
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -57,8 +30,8 @@ export const Header = () => {
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="/login">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Sign In</span>
+              <User className="h-4 w-4 mr-2" />
+              Sign In
             </Link>
           </Button>
         </div>
