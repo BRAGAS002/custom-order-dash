@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Star, Clock, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, Star, Clock, MapPin, ArrowLeft, ShoppingCart } from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 
 // Mock data - will be replaced with database queries
 const mockEnterprises = [
@@ -63,7 +63,19 @@ const mockEnterprises = [
 
 const categories = ["All", "Digital Printing", "Commercial Printing", "Copy & Print"];
 
+// Mock products for enterprises
+const mockProducts = [
+  { id: 1, enterpriseId: 1, name: "Business Cards", price: 500, category: "Cards", image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&h=300&fit=crop" },
+  { id: 2, enterpriseId: 1, name: "Flyers A5", price: 300, category: "Promotional", image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop" },
+  { id: 3, enterpriseId: 1, name: "Posters A3", price: 1200, category: "Large Format", image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop" },
+  { id: 4, enterpriseId: 2, name: "Brochures", price: 800, category: "Marketing", image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&h=300&fit=crop" },
+  { id: 5, enterpriseId: 2, name: "Banners", price: 2500, category: "Large Format", image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=300&fit=crop" },
+  { id: 6, enterpriseId: 3, name: "T-Shirt Printing", price: 450, category: "Apparel", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=300&fit=crop" },
+];
+
 export default function Enterprises() {
+  const { enterpriseId } = useParams();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -73,6 +85,114 @@ export default function Enterprises() {
     return matchesSearch && matchesCategory;
   });
 
+  // If viewing a specific enterprise, show its products
+  if (enterpriseId) {
+    const enterprise = mockEnterprises.find(e => e.id === parseInt(enterpriseId));
+    const enterpriseProducts = mockProducts.filter(p => p.enterpriseId === parseInt(enterpriseId));
+
+    if (!enterprise) {
+      return (
+        <div className="min-h-screen bg-background">
+          <Header />
+          <main className="container py-8">
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground">Enterprise not found</p>
+              <Button onClick={() => navigate("/enterprises")} className="mt-4">
+                Back to Enterprises
+              </Button>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        
+        <main className="container py-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/enterprises")}
+            className="mb-6"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Shops
+          </Button>
+
+          <div className="mb-8">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h1 className="mb-2">{enterprise.name}</h1>
+                <Badge variant="secondary" className="mb-2">{enterprise.category}</Badge>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-primary text-primary" />
+                    <span>{enterprise.rating} ({enterprise.reviews} reviews)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{enterprise.address}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    <span>{enterprise.deliveryTime}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold mb-6">Products</h2>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {enterpriseProducts.map((product) => (
+              <Card key={product.id} className="shadow-card hover:shadow-card-hover transition-smooth overflow-hidden group">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-48 object-cover"
+                />
+                
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">{product.name}</h3>
+                      <Badge variant="outline">{product.category}</Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent>
+                  <p className="text-2xl font-bold text-primary">₱{product.price}</p>
+                </CardContent>
+
+                <CardFooter className="flex gap-2">
+                  <Button variant="outline" className="flex-1" asChild>
+                    <Link to={`/products/${product.id}`}>
+                      View Details
+                    </Link>
+                  </Button>
+                  <Button className="flex-1">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {enterpriseProducts.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground">No products available</p>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  // Default view: list all enterprises
   return (
     <div className="min-h-screen bg-background">
       <Header />
