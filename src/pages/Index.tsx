@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Hero } from "@/components/home/Hero";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
+import { Chatbot } from "@/components/Chatbot";
 
 const Index = () => {
   return (
@@ -8,6 +9,7 @@ const Index = () => {
       <Header />
       <Hero />
       <FeaturesSection />
+      <Chatbot />
     </div>
   );
 };

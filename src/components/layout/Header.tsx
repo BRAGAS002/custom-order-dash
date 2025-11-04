@@ -1,8 +1,12 @@
 import { ShoppingCart, User, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 export const Header = () => {
+  const [cartCount] = useState(2); // Mock cart count
+  
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -17,20 +21,32 @@ export const Header = () => {
           <Link to="/enterprises" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
             Printing Shops
           </Link>
+          <Link to="/ai-design" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
+            AI Design
+          </Link>
           <Link to="/orders" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
             My Orders
           </Link>
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" size="icon" asChild className="relative">
             <Link to="/cart">
               <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                  {cartCount}
+                </Badge>
+              )}
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/profile">
+              <User className="h-5 w-5" />
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="/login">
-              <User className="h-4 w-4 mr-2" />
               Sign In
             </Link>
           </Button>
