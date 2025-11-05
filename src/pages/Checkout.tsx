@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { CreditCard, Wallet } from "lucide-react";
+import { CreditCard, Wallet, Building2, Smartphone } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -113,7 +113,7 @@ const Checkout = () => {
                     <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
                       <RadioGroupItem value="gcash" id="gcash" />
                       <Label htmlFor="gcash" className="flex items-center gap-3 cursor-pointer flex-1">
-                        <Wallet className="h-5 w-5" />
+                        <Smartphone className="h-5 w-5 text-primary" />
                         <div>
                           <p className="font-medium">GCash</p>
                           <p className="text-sm text-muted-foreground">Pay via GCash e-wallet</p>
@@ -124,10 +124,54 @@ const Checkout = () => {
                     <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
                       <RadioGroupItem value="maya" id="maya" />
                       <Label htmlFor="maya" className="flex items-center gap-3 cursor-pointer flex-1">
-                        <Wallet className="h-5 w-5" />
+                        <Smartphone className="h-5 w-5 text-primary" />
                         <div>
-                          <p className="font-medium">Maya</p>
+                          <p className="font-medium">Maya (PayMaya)</p>
                           <p className="text-sm text-muted-foreground">Pay via Maya e-wallet</p>
+                        </div>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
+                      <RadioGroupItem value="bank_transfer" id="bank_transfer" />
+                      <Label htmlFor="bank_transfer" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium">Online Banking</p>
+                          <p className="text-sm text-muted-foreground">BPI, BDO, Metrobank, UnionBank, etc.</p>
+                        </div>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
+                      <RadioGroupItem value="grabpay" id="grabpay" />
+                      <Label htmlFor="grabpay" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <Wallet className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium">GrabPay</p>
+                          <p className="text-sm text-muted-foreground">Pay via GrabPay wallet</p>
+                        </div>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
+                      <RadioGroupItem value="shopeepay" id="shopeepay" />
+                      <Label htmlFor="shopeepay" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <Wallet className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium">ShopeePay</p>
+                          <p className="text-sm text-muted-foreground">Pay via ShopeePay wallet</p>
+                        </div>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
+                      <RadioGroupItem value="credit_card" id="credit_card" />
+                      <Label htmlFor="credit_card" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="font-medium">Credit/Debit Card</p>
+                          <p className="text-sm text-muted-foreground">Visa, Mastercard, JCB, AMEX</p>
                         </div>
                       </Label>
                     </div>
@@ -135,7 +179,7 @@ const Checkout = () => {
                     <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
                       <RadioGroupItem value="cod" id="cod" />
                       <Label htmlFor="cod" className="flex items-center gap-3 cursor-pointer flex-1">
-                        <CreditCard className="h-5 w-5" />
+                        <CreditCard className="h-5 w-5 text-primary" />
                         <div>
                           <p className="font-medium">Cash on Delivery</p>
                           <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
