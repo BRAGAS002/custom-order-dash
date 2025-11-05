@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Users, 
   Store, 
@@ -11,8 +12,10 @@ import {
   DollarSign,
   Activity,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  QrCode
 } from "lucide-react";
+import QRCode from "react-qr-code";
 
 // Mock data for admin dashboard
 const systemStats = {
@@ -32,10 +35,10 @@ const recentShops = [
 ];
 
 const recentOrders = [
-  { id: 1, shop: "Baguio Print Express", customer: "Juan Cruz", amount: 850, status: "In Progress" },
-  { id: 2, shop: "City Printing Services", customer: "Maria Santos", amount: 2500, status: "Complete" },
-  { id: 3, shop: "FastPrint Baguio", customer: "Pedro Reyes", amount: 1200, status: "Pending" },
-  { id: 4, shop: "Premium Print Solutions", customer: "Ana Garcia", amount: 650, status: "In Progress" },
+  { id: 1, orderNumber: "ORD-2025-0001", shop: "Baguio Print Express", customer: "Juan Cruz", amount: 850, status: "In Progress" },
+  { id: 2, orderNumber: "ORD-2025-0002", shop: "City Printing Services", customer: "Maria Santos", amount: 2500, status: "Complete" },
+  { id: 3, orderNumber: "ORD-2025-0003", shop: "FastPrint Baguio", customer: "Pedro Reyes", amount: 1200, status: "Pending" },
+  { id: 4, orderNumber: "ORD-2025-0004", shop: "Premium Print Solutions", customer: "Ana Garcia", amount: 650, status: "In Progress" },
 ];
 
 export default function AdminDashboard() {
@@ -163,7 +166,7 @@ export default function AdminDashboard() {
                   {recentOrders.map((order) => (
                     <div key={order.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-secondary/50 transition-smooth">
                       <div className="space-y-1">
-                        <h4 className="font-semibold">Order #{order.id}</h4>
+                        <h4 className="font-semibold">{order.orderNumber}</h4>
                         <div className="flex gap-4 text-sm text-muted-foreground">
                           <span>{order.shop}</span>
                           <span>•</span>
@@ -177,6 +180,37 @@ export default function AdminDashboard() {
                             {order.status}
                           </Badge>
                         </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <QrCode className="h-4 w-4 mr-2" />
+                              QR Code
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Order QR Code - {order.orderNumber}</DialogTitle>
+                            </DialogHeader>
+                            <div className="flex flex-col items-center gap-4 py-4">
+                              <div className="bg-white p-4 rounded-lg">
+                                <QRCode 
+                                  value={JSON.stringify({
+                                    orderNumber: order.orderNumber,
+                                    id: order.id,
+                                    shop: order.shop,
+                                    customer: order.customer,
+                                    amount: order.amount,
+                                    status: order.status
+                                  })}
+                                  size={200}
+                                />
+                              </div>
+                              <p className="text-sm text-muted-foreground text-center">
+                                Scan this QR code for order verification and tracking
+                              </p>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                         <Button variant="outline" size="sm">
                           View
                         </Button>

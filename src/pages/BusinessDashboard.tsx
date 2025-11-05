@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Package, 
   TrendingUp, 
@@ -12,8 +13,10 @@ import {
   AlertCircle,
   Plus,
   Edit,
-  Settings
+  Settings,
+  QrCode
 } from "lucide-react";
+import QRCode from "react-qr-code";
 
 // Mock data for business dashboard
 const businessStats = {
@@ -27,7 +30,8 @@ const businessStats = {
 
 const recentOrders = [
   { 
-    id: 1, 
+    id: 1,
+    orderNumber: "ORD-2025-0001",
     customer: "Juan Cruz", 
     product: "Business Cards (500pcs)", 
     amount: 850, 
@@ -35,7 +39,8 @@ const recentOrders = [
     date: "2025-01-15 14:30"
   },
   { 
-    id: 2, 
+    id: 2,
+    orderNumber: "ORD-2025-0002",
     customer: "Maria Santos", 
     product: "Tarpaulin Banner (6x4ft)", 
     amount: 2000, 
@@ -43,7 +48,8 @@ const recentOrders = [
     date: "2025-01-15 13:15"
   },
   { 
-    id: 3, 
+    id: 3,
+    orderNumber: "ORD-2025-0003",
     customer: "Pedro Reyes", 
     product: "Flyers (A5, 1000pcs)", 
     amount: 650, 
@@ -51,7 +57,8 @@ const recentOrders = [
     date: "2025-01-15 10:45"
   },
   { 
-    id: 4, 
+    id: 4,
+    orderNumber: "ORD-2025-0004",
     customer: "Ana Garcia", 
     product: "Brochures (A4, 500pcs)", 
     amount: 1200, 
@@ -176,7 +183,7 @@ export default function BusinessDashboard() {
                         <div className="flex items-start justify-between mb-3">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="font-semibold">Order #{order.id}</h4>
+                              <h4 className="font-semibold">{order.orderNumber}</h4>
                               <Badge variant={statusVariant}>
                                 <StatusIcon className="h-3 w-3 mr-1" />
                                 {order.status}
@@ -201,6 +208,38 @@ export default function BusinessDashboard() {
                         </div>
 
                         <div className="flex gap-2 mt-4">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <QrCode className="h-4 w-4 mr-2" />
+                                QR Code
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Order QR Code - {order.orderNumber}</DialogTitle>
+                              </DialogHeader>
+                              <div className="flex flex-col items-center gap-4 py-4">
+                                <div className="bg-white p-4 rounded-lg">
+                                  <QRCode 
+                                    value={JSON.stringify({
+                                      orderNumber: order.orderNumber,
+                                      id: order.id,
+                                      customer: order.customer,
+                                      product: order.product,
+                                      amount: order.amount,
+                                      status: order.status,
+                                      date: order.date
+                                    })}
+                                    size={200}
+                                  />
+                                </div>
+                                <p className="text-sm text-muted-foreground text-center">
+                                  Scan this QR code for order verification and tracking
+                                </p>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                           <Button variant="default" size="sm">
                             View Details
                           </Button>

@@ -2,12 +2,14 @@ import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, Clock, CheckCircle2, Truck } from "lucide-react";
+import { Package, Clock, CheckCircle2, Truck, QrCode } from "lucide-react";
 import { Link } from "react-router-dom";
+import QRCode from "react-qr-code";
 
 // Mock order data for print jobs
 const mockOrders = [
   {
+    orderNumber: "ORD-2025-0001",
     id: 1,
     enterpriseName: "Baguio Print Express",
     orderDate: "2025-01-15 14:30",
@@ -24,6 +26,7 @@ const mockOrders = [
     ],
   },
   {
+    orderNumber: "ORD-2025-0002",
     id: 2,
     enterpriseName: "City Printing Services",
     orderDate: "2025-01-14 10:15",
@@ -121,6 +124,28 @@ export default function Orders() {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4 mt-4">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <QrCode className="h-4 w-4" />
+                      Order QR Code
+                    </h4>
+                    <div className="bg-white p-4 rounded-lg inline-block">
+                      <QRCode 
+                        value={JSON.stringify({
+                          orderNumber: order.orderNumber,
+                          id: order.id,
+                          enterpriseName: order.enterpriseName,
+                          totalAmount: order.totalAmount,
+                          status: order.currentStatus
+                        })}
+                        size={128}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Scan this QR code for quick order verification
+                    </p>
                   </div>
 
                   <div className="flex gap-3">
