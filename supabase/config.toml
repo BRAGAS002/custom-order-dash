@@ -1,1 +1,7 @@
 project_id = "ridfupvpqeanqffiqykm"
+
+[functions.pusher-auth]
+verify_jwt = true
+
+[functions.send-message]
+verify_jwt = true

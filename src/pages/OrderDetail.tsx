@@ -3,8 +3,9 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Package, MapPin, CreditCard, Calendar } from "lucide-react";
+import { ArrowLeft, Package, MapPin, CreditCard, Calendar, MessageSquare } from "lucide-react";
 import QRCode from "react-qr-code";
+import { OrderChat } from "@/components/chat/OrderChat";
 
 const OrderDetail = () => {
   const { orderId } = useParams();
@@ -198,6 +199,20 @@ const OrderDetail = () => {
               Track Order
             </Button>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Order Chat
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <OrderChat orderId={orderId || ""} userType="customer" />
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
