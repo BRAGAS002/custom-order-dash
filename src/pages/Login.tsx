@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Store, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { z } from "zod";
+
+const emailSchema = z.string().email("Please enter a valid email address");
+const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
 export default function Login() {
+  const { user, loading, signIn, signUp } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   // Login form state
@@ -21,34 +29,52 @@ export default function Login() {
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [accountType, setAccountType] = useState<"customer" | "business">("customer");
 
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Basic validation
-    if (!loginEmail || !loginPassword) {
-      toast.error("Please fill in all fields");
+    const emailResult = emailSchema.safeParse(loginEmail);
+    if (!emailResult.success) {
+      toast.error(emailResult.error.errors[0].message);
       setIsLoading(false);
       return;
     }
 
-    // TODO: Implement actual authentication with Lovable Cloud
-    console.log("Login:", { email: loginEmail, password: loginPassword });
-    
-    setTimeout(() => {
-      toast.success("Login successful!");
-      setIsLoading(false);
-      // Redirect based on user role (will be implemented with actual auth)
-    }, 1000);
+    const { error } = await signIn(loginEmail, loginPassword);
+    if (error) {
+      if (error.message.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password");
+      } else if (error.message.includes("Email not confirmed")) {
+        toast.error("Please check your email and confirm your account first");
+      } else {
+        toast.error(error.message);
+      }
+    } else {
+      toast.success("Welcome back!");
+    }
+    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validation
-    if (!signupEmail || !signupPassword || !signupConfirmPassword) {
-      toast.error("Please fill in all fields");
+    const emailResult = emailSchema.safeParse(signupEmail);
+    if (!emailResult.success) {
+      toast.error(emailResult.error.errors[0].message);
+      setIsLoading(false);
+      return;
+    }
+
+    const passwordResult = passwordSchema.safeParse(signupPassword);
+    if (!passwordResult.success) {
+      toast.error(passwordResult.error.errors[0].message);
       setIsLoading(false);
       return;
     }
@@ -59,25 +85,20 @@ export default function Login() {
       return;
     }
 
-    if (signupPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      setIsLoading(false);
-      return;
+    const { error } = await signUp(signupEmail, signupPassword, accountType);
+    if (error) {
+      if (error.message.includes("already registered")) {
+        toast.error("An account with this email already exists. Please sign in instead.");
+      } else {
+        toast.error(error.message);
+      }
+    } else {
+      toast.success("Account created! Please check your email to confirm your account.");
     }
-
-    // TODO: Implement actual registration with Lovable Cloud
-    console.log("Signup:", { 
-      email: signupEmail, 
-      password: signupPassword, 
-      accountType 
-    });
-    
-    setTimeout(() => {
-      toast.success("Account created successfully! Please sign in.");
-      setIsLoading(false);
-      // Switch to login tab
-    }, 1000);
+    setIsLoading(false);
   };
+
+  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
@@ -136,6 +157,18 @@ export default function Login() {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
+
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  <GoogleSignInButton />
+
                   <div className="text-center text-sm text-muted-foreground">
                     <Link to="/admin/login" className="text-primary hover:underline">
                       Admin Login
@@ -203,6 +236,17 @@ export default function Login() {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Creating account..." : "Sign Up"}
                   </Button>
+
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  <GoogleSignInButton />
                 </CardContent>
               </form>
             </TabsContent>

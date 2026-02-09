@@ -1,12 +1,20 @@
-import { ShoppingCart, User, Store } from "lucide-react";
+import { ShoppingCart, User, Store, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Header = () => {
   const [cartCount] = useState(2); // Mock cart count
-  
+  const { user, userRole, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -24,9 +32,21 @@ export const Header = () => {
           <Link to="/ai-design" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
             AI Design
           </Link>
-          <Link to="/orders" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
-            My Orders
-          </Link>
+          {user && (
+            <Link to="/orders" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
+              My Orders
+            </Link>
+          )}
+          {userRole === "business" && (
+            <Link to="/business" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
+              Dashboard
+            </Link>
+          )}
+          {userRole === "admin" && (
+            <Link to="/admin" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -40,16 +60,23 @@ export const Header = () => {
               )}
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/profile">
-              <User className="h-5 w-5" />
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/login">
-              Sign In
-            </Link>
-          </Button>
+
+          {user ? (
+            <>
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/profile">
+                  <User className="h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/login">Sign In</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

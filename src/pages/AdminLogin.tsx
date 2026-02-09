@@ -1,39 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Shield, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const emailSchema = z.string().email("Please enter a valid email address");
 
 export default function AdminLogin() {
+  const { user, loading, signIn, userRole } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (!loading && user && userRole === "admin") {
+      navigate("/admin", { replace: true });
+    } else if (!loading && user && userRole && userRole !== "admin") {
+      toast.error("You do not have admin access");
+    }
+  }, [user, loading, userRole, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Basic validation
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      toast.error(emailResult.error.errors[0].message);
       setIsLoading(false);
       return;
     }
 
-    // TODO: Implement actual admin authentication with Lovable Cloud
-    // This should verify admin role from user_roles table
-    console.log("Admin Login:", { email, password });
-    
-    setTimeout(() => {
-      toast.success("Admin login successful!");
+    const { error } = await signIn(email, password);
+    if (error) {
+      if (error.message.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password");
+      } else {
+        toast.error(error.message);
+      }
       setIsLoading(false);
-      // Redirect to admin dashboard
-      window.location.href = "/admin";
-    }, 1000);
+      return;
+    }
+
+    // After sign in, check admin role via the has_role function
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      const { data: isAdmin } = await supabase.rpc("has_role", {
+        _user_id: sessionData.session.user.id,
+        _role: "admin",
+      });
+
+      if (!isAdmin) {
+        toast.error("You do not have admin access");
+        await supabase.auth.signOut();
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    setIsLoading(false);
   };
+
+  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
