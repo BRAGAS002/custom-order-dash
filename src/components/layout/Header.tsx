@@ -1,14 +1,32 @@
-import { ShoppingCart, User, Store, LogOut } from "lucide-react";
+import { ShoppingCart, User, Store, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { getCartItems } from "@/lib/cart";
 
 export const Header = () => {
-  const [cartCount] = useState(2); // Mock cart count
+  const [cartCount, setCartCount] = useState(0);
   const { user, userRole, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const updateCount = () => setCartCount(getCartItems().length);
+    updateCount();
+    // Listen for storage changes (cross-tab) and custom cart events
+    window.addEventListener("storage", updateCount);
+    window.addEventListener("cart-updated", updateCount);
+    return () => {
+      window.removeEventListener("storage", updateCount);
+      window.removeEventListener("cart-updated", updateCount);
+    };
+  }, []);
+
+  // Also refresh count when navigating
+  useEffect(() => {
+    setCartCount(getCartItems().length);
+  });
 
   const handleSignOut = async () => {
     await signOut();
