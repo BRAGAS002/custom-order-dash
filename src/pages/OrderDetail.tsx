@@ -3,74 +3,94 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Package, MapPin, CreditCard, Calendar, MessageSquare } from "lucide-react";
+import { ArrowLeft, Package, MapPin, CreditCard, Calendar, MessageSquare, Loader2 } from "lucide-react";
 import QRCode from "react-qr-code";
 import { OrderChat } from "@/components/chat/OrderChat";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const OrderDetail = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Mock order data - replace with actual data fetch
-  const order = {
-    id: orderId,
-    orderNumber: `ORD-${orderId?.padStart(6, '0')}`,
-    status: "processing",
-    date: "2024-03-15",
-    total: 1250.00,
-    items: [
-      {
-        id: "1",
-        name: "Business Cards",
-        quantity: 500,
-        price: 750.00,
-        options: "Premium Paper, Glossy Finish"
-      },
-      {
-        id: "2",
-        name: "Flyers",
-        quantity: 100,
-        price: 500.00,
-        options: "A5 Size, Full Color"
-      }
-    ],
-    customer: {
-      name: "Juan Dela Cruz",
-      email: "juan@example.com",
-      phone: "+63 912 345 6789"
+  const { data: order, isLoading } = useQuery({
+    queryKey: ["order-detail", orderId],
+    queryFn: async () => {
+      if (!orderId) return null;
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
     },
-    delivery: {
-      address: "123 Main St, Quezon City, Metro Manila",
-      method: "Standard Delivery",
-      estimatedDate: "2024-03-20"
+    enabled: !!orderId,
+  });
+
+  const { data: orderItems } = useQuery({
+    queryKey: ["order-items", orderId],
+    queryFn: async () => {
+      if (!orderId) return [];
+      const { data, error } = await supabase
+        .from("order_items")
+        .select("*")
+        .eq("order_id", orderId);
+      if (error) throw error;
+      return data;
     },
-    payment: {
-      method: "GCash",
-      status: "paid"
-    }
-  };
+    enabled: !!orderId,
+  });
+
+  const { data: statusHistory } = useQuery({
+    queryKey: ["order-history", orderId],
+    queryFn: async () => {
+      if (!orderId) return [];
+      const { data, error } = await supabase
+        .from("order_status_history")
+        .select("*")
+        .eq("order_id", orderId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orderId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-16 text-center">
+          <p className="text-lg text-muted-foreground mb-4">Order not found</p>
+          <Button onClick={() => navigate("/orders")}>Back to Orders</Button>
+        </main>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      pending: "bg-yellow-500",
-      processing: "bg-blue-500",
-      completed: "bg-green-500",
-      cancelled: "bg-red-500"
-    };
-    return colors[status as keyof typeof colors] || "bg-gray-500";
+    const colors: Record<string, string> = { pending: "bg-warning", confirmed: "bg-primary", processing: "bg-primary", ready: "bg-accent", completed: "bg-success", cancelled: "bg-destructive" };
+    return colors[status] || "bg-muted-foreground";
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate("/orders")}
-          className="mb-6"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Orders
+        <Button variant="ghost" onClick={() => navigate("/orders")} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" />Back to Orders
         </Button>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -79,31 +99,40 @@ const OrderDetail = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Order {order.orderNumber}</CardTitle>
+                    <CardTitle>Order {order.order_number}</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Placed on {new Date(order.date).toLocaleDateString()}
+                      Placed on {order.created_at ? new Date(order.created_at).toLocaleDateString() : "—"}
                     </p>
                   </div>
-                  <Badge className={`${getStatusColor(order.status)} text-white`}>
-                    {order.status}
+                  <Badge className={`${getStatusColor(order.order_status ?? "pending")} text-white capitalize`}>
+                    {order.order_status}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="flex justify-between items-start border-b pb-4 last:border-0">
-                      <div>
-                        <h4 className="font-medium">{item.name}</h4>
-                        <p className="text-sm text-muted-foreground">{item.options}</p>
-                        <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
+                  {orderItems && orderItems.length > 0 ? (
+                    orderItems.map((item) => (
+                      <div key={item.id} className="flex justify-between items-start border-b pb-4 last:border-0">
+                        <div>
+                          <h4 className="font-medium">{item.product_name}</h4>
+                          {item.notes && <p className="text-sm text-muted-foreground">{item.notes}</p>}
+                          <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        </div>
+                        <p className="font-medium">₱{Number(item.total_price).toLocaleString()}</p>
                       </div>
-                      <p className="font-medium">₱{item.price.toFixed(2)}</p>
+                    ))
+                  ) : (
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">{order.product_name}</h4>
+                        <p className="text-sm text-muted-foreground">Qty: {order.quantity}</p>
+                      </div>
                     </div>
-                  ))}
+                  )}
                   <div className="flex justify-between items-center pt-4 border-t">
                     <span className="font-semibold">Total</span>
-                    <span className="text-2xl font-bold">₱{order.total.toFixed(2)}</span>
+                    <span className="text-2xl font-bold">₱{Number(order.total_amount).toLocaleString()}</span>
                   </div>
                 </div>
               </CardContent>
@@ -111,103 +140,87 @@ const OrderDetail = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Delivery Information
-                </CardTitle>
+                <CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5" />Delivery Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium">Delivery Address</p>
-                  <p className="text-sm text-muted-foreground">{order.delivery.address}</p>
+                  <p className="text-sm font-medium">Fulfillment</p>
+                  <p className="text-sm text-muted-foreground capitalize">{order.fulfillment_type}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Delivery Method</p>
-                  <p className="text-sm text-muted-foreground">{order.delivery.method}</p>
+                  <p className="text-sm font-medium">Address</p>
+                  <p className="text-sm text-muted-foreground">{order.delivery_address}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" />Payment</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex gap-4">
                   <div>
-                    <p className="text-sm font-medium">Estimated Delivery</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(order.delivery.estimatedDate).toLocaleDateString()}
-                    </p>
+                    <p className="text-sm font-medium">Method</p>
+                    <p className="text-sm text-muted-foreground capitalize">{order.payment_method ?? "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Status</p>
+                    <Badge variant={order.payment_status === "paid" ? "default" : "secondary"} className="capitalize">{order.payment_status}</Badge>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Payment Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium">Payment Method</p>
-                  <p className="text-sm text-muted-foreground">{order.payment.method}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Payment Status</p>
-                  <Badge variant={order.payment.status === "paid" ? "default" : "secondary"}>
-                    {order.payment.status}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+            {statusHistory && statusHistory.length > 0 && (
+              <Card>
+                <CardHeader><CardTitle>Order Progress</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {statusHistory.map((entry) => (
+                      <div key={entry.id} className="flex items-start gap-3">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 mt-1">
+                          <div className="h-2 w-2 rounded-full bg-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium capitalize">{entry.status}</div>
+                          <div className="text-sm text-muted-foreground">{new Date(entry.created_at!).toLocaleString()}</div>
+                          {entry.notes && <p className="text-sm text-muted-foreground">{entry.notes}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Order QR Code</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Order QR Code</CardTitle></CardHeader>
               <CardContent className="flex flex-col items-center gap-4">
                 <div className="bg-white p-4 rounded-lg">
-                  <QRCode value={order.orderNumber} size={200} />
+                  <QRCode value={order.order_number} size={200} />
                 </div>
-                <p className="text-sm text-center text-muted-foreground">
-                  Scan this code for quick order tracking
-                </p>
+                <p className="text-sm text-center text-muted-foreground">Scan for quick order tracking</p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Customer Information</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Customer Info</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium">Name</p>
-                  <p className="text-sm text-muted-foreground">{order.customer.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Email</p>
-                  <p className="text-sm text-muted-foreground">{order.customer.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Phone</p>
-                  <p className="text-sm text-muted-foreground">{order.customer.phone}</p>
-                </div>
+                <div><p className="text-sm font-medium">Name</p><p className="text-sm text-muted-foreground">{order.customer_name}</p></div>
+                <div><p className="text-sm font-medium">Email</p><p className="text-sm text-muted-foreground">{order.customer_email}</p></div>
+                {order.customer_phone && <div><p className="text-sm font-medium">Phone</p><p className="text-sm text-muted-foreground">{order.customer_phone}</p></div>}
               </CardContent>
             </Card>
-
-            <Button className="w-full" variant="outline">
-              <Package className="mr-2 h-4 w-4" />
-              Track Order
-            </Button>
           </div>
         </div>
 
         <div className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Order Chat
-              </CardTitle>
+              <CardTitle className="flex items-center gap-2"><MessageSquare className="h-5 w-5" />Order Chat</CardTitle>
             </CardHeader>
             <CardContent>
               <OrderChat orderId={orderId || ""} userType="customer" />

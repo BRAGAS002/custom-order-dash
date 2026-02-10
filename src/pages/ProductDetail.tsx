@@ -125,7 +125,7 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="container py-16 text-center">
-          <p className="text-lg text-muted-foreground mb-4">Product not found</p>
+          <p className="text-lg text-muted-foreground mb-4">Service not found</p>
           <Button onClick={() => navigate("/enterprises")}>Browse Services</Button>
         </main>
       </div>

@@ -99,7 +99,7 @@ export default function Enterprises() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <p className="text-lg text-muted-foreground">No products available yet</p>
+              <p className="text-lg text-muted-foreground">No services available yet</p>
             </div>
           )}
         </main>
