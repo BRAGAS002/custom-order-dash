@@ -69,7 +69,7 @@ export function ShopCard({ shop, reviewData }: ShopCardProps) {
 
       <CardFooter>
         <Button variant="default" className="w-full" asChild>
-          <Link to={`/enterprises/${shop.id}`}>View Products</Link>
+          <Link to={`/enterprises/${shop.id}`}>View Services</Link>
         </Button>
       </CardFooter>
     </Card>

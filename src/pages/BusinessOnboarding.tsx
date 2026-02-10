@@ -115,7 +115,7 @@ export default function BusinessOnboarding() {
           </div>
           <h1 className="text-3xl font-bold mb-3">Shop Registered!</h1>
           <p className="text-muted-foreground mb-6">
-            Your shop has been submitted for verification. You'll be notified once it's approved. In the meantime, you can start adding products from your dashboard.
+            Your shop has been submitted for verification. You'll be notified once it's approved. In the meantime, you can start adding services from your dashboard.
           </p>
           <div className="flex gap-3 justify-center">
             <Button onClick={() => navigate("/business")}>Go to Dashboard</Button>
@@ -321,7 +321,7 @@ export default function BusinessOnboarding() {
 
               <div className="bg-muted/50 rounded-lg p-4 text-sm">
                 <p className="text-muted-foreground">
-                  After submission, your shop will be reviewed by our team. You'll receive a notification once verified. You can start adding products immediately.
+                  After submission, your shop will be reviewed by our team. You'll receive a notification once verified. You can start adding services immediately.
                 </p>
               </div>
 
