@@ -1,10 +1,11 @@
-import { ShoppingCart, User, Store, LogOut, Menu } from "lucide-react";
+import { ShoppingCart, User, Store, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getCartItems } from "@/lib/cart";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export const Header = () => {
   const [cartCount, setCartCount] = useState(0);
@@ -14,7 +15,6 @@ export const Header = () => {
   useEffect(() => {
     const updateCount = () => setCartCount(getCartItems().length);
     updateCount();
-    // Listen for storage changes (cross-tab) and custom cart events
     window.addEventListener("storage", updateCount);
     window.addEventListener("cart-updated", updateCount);
     return () => {
@@ -23,7 +23,6 @@ export const Header = () => {
     };
   }, []);
 
-  // Also refresh count when navigating
   useEffect(() => {
     setCartCount(getCartItems().length);
   });
@@ -38,9 +37,7 @@ export const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <Store className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold gradient-primary bg-clip-text text-transparent">
-            UniPrint
-          </span>
+          <span className="text-xl font-bold gradient-primary bg-clip-text text-transparent">UniPrint</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
@@ -67,7 +64,7 @@ export const Header = () => {
           )}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link to="/cart">
               <ShoppingCart className="h-5 w-5" />
@@ -81,6 +78,7 @@ export const Header = () => {
 
           {user ? (
             <>
+              <NotificationBell />
               <Button variant="ghost" size="icon" asChild>
                 <Link to="/profile">
                   <User className="h-5 w-5" />

@@ -13,6 +13,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useProductById, useProductCustomizations, useProductImages } from "@/hooks/useMarketplace";
 import { addToCart } from "@/lib/cart";
+import { ReviewList } from "@/components/reviews/ReviewList";
 
 export default function ProductDetail() {
   const { productId } = useParams();
@@ -298,6 +299,11 @@ export default function ProductDetail() {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Reviews */}
+        <div className="mt-8">
+          <ReviewList shopId={product.shop_id} productId={product.id} />
         </div>
       </main>
     </div>

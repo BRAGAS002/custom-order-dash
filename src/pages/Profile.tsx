@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,54 +6,152 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, MapPin, Phone, Mail, Lock } from "lucide-react";
+import { User, MapPin, Phone, Mail, Lock, Loader2, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Profile = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = (e: React.FormEvent) => {
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "");
+      setEmail(profile.email || "");
+      setPhone(profile.phone || "");
+      setAddress(profile.address || "");
+      setCity(profile.city || "");
+    }
+  }, [profile]);
+
+  const updateProfile = useMutation({
+    mutationFn: async (updates: Record<string, any>) => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast({ title: "Profile Updated", description: "Your profile has been saved." });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
+  const handleSavePersonal = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
+    updateProfile.mutate({ full_name: fullName, phone });
   };
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handleSaveAddress = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Password Changed",
-      description: "Your password has been successfully changed.",
-    });
+    updateProfile.mutate({ address, city });
   };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Password Changed", description: "Your password has been updated." });
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("profile-avatars")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: "Upload Failed", description: uploadError.message, variant: "destructive" });
+      return;
+    }
+
+    const { data: publicUrl } = supabase.storage.from("profile-avatars").getPublicUrl(path);
+    updateProfile.mutate({ avatar_url: publicUrl.publicUrl });
+  };
+
+  const initials = fullName
+    ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "U";
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-3xl font-bold mb-8">My Profile</h1>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Profile Overview */}
           <Card className="md:col-span-1 shadow-card h-fit">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">
-                <Avatar className="h-24 w-24 mb-4">
-                  <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar>
-                <h2 className="text-xl font-bold mb-1">John Dela Cruz</h2>
-                <p className="text-sm text-muted-foreground mb-4">Customer</p>
-                <Button variant="outline" size="sm" className="w-full">
-                  Change Photo
-                </Button>
+                <div className="relative">
+                  <Avatar className="h-24 w-24 mb-4">
+                    <AvatarImage src={profile?.avatar_url ?? undefined} />
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </Avatar>
+                  <button
+                    className="absolute bottom-3 right-0 bg-primary text-primary-foreground rounded-full p-1.5 hover:opacity-90"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                </div>
+                <h2 className="text-xl font-bold mb-1">{fullName || "User"}</h2>
+                <p className="text-sm text-muted-foreground mb-2">{email}</p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Profile Details */}
           <div className="md:col-span-2">
             <Tabs defaultValue="personal" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3">
@@ -61,130 +160,76 @@ const Profile = () => {
                 <TabsTrigger value="security">Security</TabsTrigger>
               </TabsList>
 
-              {/* Personal Information */}
               <TabsContent value="personal">
                 <Card className="shadow-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <User className="h-5 w-5" />
-                      Personal Information
-                    </CardTitle>
-                    <CardDescription>
-                      Update your personal details here
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />Personal Information</CardTitle>
+                    <CardDescription>Update your personal details here</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleSave} className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="firstName">First Name</Label>
-                          <Input id="firstName" defaultValue="John" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName">Last Name</Label>
-                          <Input id="lastName" defaultValue="Dela Cruz" />
-                        </div>
-                      </div>
-                      
+                    <form onSubmit={handleSavePersonal} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          Email
-                        </Label>
-                        <Input id="email" type="email" defaultValue="john.delacruz@email.com" />
+                        <Label htmlFor="fullName">Full Name</Label>
+                        <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
                       </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          Phone Number
-                        </Label>
-                        <Input id="phone" type="tel" defaultValue="+63 912 345 6789" />
+                        <Label htmlFor="email" className="flex items-center gap-2"><Mail className="h-4 w-4" />Email</Label>
+                        <Input id="email" type="email" value={email} disabled className="opacity-60" />
+                        <p className="text-xs text-muted-foreground">Email cannot be changed</p>
                       </div>
-
-                      <Button type="submit" className="w-full">
-                        Save Changes
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="flex items-center gap-2"><Phone className="h-4 w-4" />Phone Number</Label>
+                        <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 912 345 6789" />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={updateProfile.isPending}>
+                        {updateProfile.isPending ? "Saving..." : "Save Changes"}
                       </Button>
                     </form>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              {/* Address Information */}
               <TabsContent value="address">
                 <Card className="shadow-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5" />
-                      Delivery Address
-                    </CardTitle>
-                    <CardDescription>
-                      Manage your delivery addresses
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5" />Delivery Address</CardTitle>
+                    <CardDescription>Manage your delivery address</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleSave} className="space-y-4">
+                    <form onSubmit={handleSaveAddress} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="street">Street Address</Label>
-                        <Input id="street" defaultValue="123 Session Road" />
+                        <Label htmlFor="address">Street Address</Label>
+                        <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Session Road" />
                       </div>
-
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City</Label>
-                          <Input id="city" defaultValue="Baguio City" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="province">Province</Label>
-                          <Input id="province" defaultValue="Benguet" />
-                        </div>
-                      </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor="postal">Postal Code</Label>
-                        <Input id="postal" defaultValue="2600" />
+                        <Label htmlFor="city">City</Label>
+                        <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Baguio City" />
                       </div>
-
-                      <Button type="submit" className="w-full">
-                        Save Address
+                      <Button type="submit" className="w-full" disabled={updateProfile.isPending}>
+                        {updateProfile.isPending ? "Saving..." : "Save Address"}
                       </Button>
                     </form>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              {/* Security Settings */}
               <TabsContent value="security">
                 <Card className="shadow-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lock className="h-5 w-5" />
-                      Security Settings
-                    </CardTitle>
-                    <CardDescription>
-                      Update your password and security preferences
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Lock className="h-5 w-5" />Security Settings</CardTitle>
+                    <CardDescription>Update your password</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handlePasswordChange} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="currentPassword">Current Password</Label>
-                        <Input id="currentPassword" type="password" />
-                      </div>
-
-                      <div className="space-y-2">
                         <Label htmlFor="newPassword">New Password</Label>
-                        <Input id="newPassword" type="password" />
+                        <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                       </div>
-
                       <div className="space-y-2">
                         <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                        <Input id="confirmPassword" type="password" />
+                        <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                       </div>
-
-                      <Button type="submit" className="w-full">
-                        Change Password
-                      </Button>
+                      <Button type="submit" className="w-full">Change Password</Button>
                     </form>
                   </CardContent>
                 </Card>
