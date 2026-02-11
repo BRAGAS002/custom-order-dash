@@ -3,9 +3,10 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Package, MapPin, CreditCard, Calendar, MessageSquare, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, MessageSquare, Loader2 } from "lucide-react";
 import QRCode from "react-qr-code";
 import { OrderChat } from "@/components/chat/OrderChat";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,11 +20,7 @@ const OrderDetail = () => {
     queryKey: ["order-detail", orderId],
     queryFn: async () => {
       if (!orderId) return null;
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .maybeSingle();
+      const { data, error } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -34,10 +31,7 @@ const OrderDetail = () => {
     queryKey: ["order-items", orderId],
     queryFn: async () => {
       if (!orderId) return [];
-      const { data, error } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", orderId);
+      const { data, error } = await supabase.from("order_items").select("*").eq("order_id", orderId);
       if (error) throw error;
       return data;
     },
@@ -48,15 +42,21 @@ const OrderDetail = () => {
     queryKey: ["order-history", orderId],
     queryFn: async () => {
       if (!orderId) return [];
-      const { data, error } = await supabase
-        .from("order_status_history")
-        .select("*")
-        .eq("order_id", orderId)
-        .order("created_at", { ascending: true });
+      const { data, error } = await supabase.from("order_status_history").select("*").eq("order_id", orderId).order("created_at", { ascending: true });
       if (error) throw error;
       return data;
     },
     enabled: !!orderId,
+  });
+
+  const { data: existingReview } = useQuery({
+    queryKey: ["order-review", orderId, user?.id],
+    queryFn: async () => {
+      if (!orderId || !user) return null;
+      const { data } = await supabase.from("reviews").select("id").eq("order_id", orderId).eq("customer_id", user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!orderId && !!user,
   });
 
   if (isLoading) {
@@ -84,6 +84,9 @@ const OrderDetail = () => {
     const colors: Record<string, string> = { pending: "bg-warning", confirmed: "bg-primary", processing: "bg-primary", ready: "bg-accent", completed: "bg-success", cancelled: "bg-destructive" };
     return colors[status] || "bg-muted-foreground";
   };
+
+  const isCompleted = order.order_status === "completed";
+  const canReview = isCompleted && !existingReview && order.customer_id === user?.id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,35 +142,19 @@ const OrderDetail = () => {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5" />Delivery Information</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5" />Delivery Information</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium">Fulfillment</p>
-                  <p className="text-sm text-muted-foreground capitalize">{order.fulfillment_type}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Address</p>
-                  <p className="text-sm text-muted-foreground">{order.delivery_address}</p>
-                </div>
+                <div><p className="text-sm font-medium">Fulfillment</p><p className="text-sm text-muted-foreground capitalize">{order.fulfillment_type}</p></div>
+                <div><p className="text-sm font-medium">Address</p><p className="text-sm text-muted-foreground">{order.delivery_address}</p></div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" />Payment</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+              <CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" />Payment</CardTitle></CardHeader>
+              <CardContent>
                 <div className="flex gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Method</p>
-                    <p className="text-sm text-muted-foreground capitalize">{order.payment_method ?? "—"}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Status</p>
-                    <Badge variant={order.payment_status === "paid" ? "default" : "secondary"} className="capitalize">{order.payment_status}</Badge>
-                  </div>
+                  <div><p className="text-sm font-medium">Method</p><p className="text-sm text-muted-foreground capitalize">{order.payment_method ?? "—"}</p></div>
+                  <div><p className="text-sm font-medium">Status</p><Badge variant={order.payment_status === "paid" ? "default" : "secondary"} className="capitalize">{order.payment_status}</Badge></div>
                 </div>
               </CardContent>
             </Card>
@@ -193,15 +180,25 @@ const OrderDetail = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Review section */}
+            {canReview && (
+              <ReviewForm orderId={orderId!} shopId={order.shop_id} productId={order.product_id ?? undefined} />
+            )}
+            {existingReview && (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-sm text-muted-foreground text-center">✅ You've already reviewed this order</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="space-y-6">
             <Card>
               <CardHeader><CardTitle>Order QR Code</CardTitle></CardHeader>
               <CardContent className="flex flex-col items-center gap-4">
-                <div className="bg-white p-4 rounded-lg">
-                  <QRCode value={order.order_number} size={200} />
-                </div>
+                <div className="bg-white p-4 rounded-lg"><QRCode value={order.order_number} size={200} /></div>
                 <p className="text-sm text-center text-muted-foreground">Scan for quick order tracking</p>
               </CardContent>
             </Card>
