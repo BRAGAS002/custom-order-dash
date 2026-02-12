@@ -1,4 +1,4 @@
-import { ShoppingCart, User, Store, LogOut } from "lucide-react";
+import { ShoppingCart, User, Store, LogOut, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
@@ -48,9 +48,14 @@ export const Header = () => {
             AI Design
           </Link>
           {user && (
-            <Link to="/orders" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
-              My Orders
-            </Link>
+            <>
+              <Link to="/orders" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
+                My Orders
+              </Link>
+              <Link to="/saved" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">
+                Saved
+              </Link>
+            </>
           )}
           {userRole === "business" && (
             <Link to="/business" className="text-sm font-medium text-foreground hover:text-primary transition-smooth">

@@ -6,11 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, MapPin, Phone, Mail, Lock, Loader2, Camera } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { User, MapPin, Phone, Mail, Lock, Loader2, Camera, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast as sonnerToast } from "sonner";
 
 const Profile = () => {
   const { toast } = useToast();
@@ -36,6 +39,10 @@ const Profile = () => {
   const [city, setCity] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [sending2FA, setSending2FA] = useState(false);
+  const [verifying2FA, setVerifying2FA] = useState(false);
+  const [show2FAInput, setShow2FAInput] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -93,21 +100,66 @@ const Profile = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("profile-avatars")
-      .upload(path, file, { upsert: true });
-
+    const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(path, file, { upsert: true });
     if (uploadError) {
       toast({ title: "Upload Failed", description: uploadError.message, variant: "destructive" });
       return;
     }
-
     const { data: publicUrl } = supabase.storage.from("profile-avatars").getPublicUrl(path);
     updateProfile.mutate({ avatar_url: publicUrl.publicUrl });
+  };
+
+  const handleSend2FACode = async () => {
+    setSending2FA(true);
+    try {
+      const { error } = await supabase.functions.invoke("send-2fa-code", {
+        body: { action: "generate" },
+      });
+      if (error) throw error;
+      setShow2FAInput(true);
+      sonnerToast.success("Verification code sent to your email");
+    } catch {
+      sonnerToast.error("Failed to send verification code");
+    } finally {
+      setSending2FA(false);
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    setVerifying2FA(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-2fa-code", {
+        body: { action: "verify", code: twoFactorCode },
+      });
+      if (error) throw error;
+      if (data?.verified) {
+        sonnerToast.success("Two-factor authentication enabled!");
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
+        setShow2FAInput(false);
+        setTwoFactorCode("");
+      } else {
+        sonnerToast.error(data?.error || "Invalid code");
+      }
+    } catch {
+      sonnerToast.error("Verification failed");
+    } finally {
+      setVerifying2FA(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    try {
+      const { error } = await supabase.functions.invoke("send-2fa-code", {
+        body: { action: "toggle", enabled: false },
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      sonnerToast.success("Two-factor authentication disabled");
+    } catch {
+      sonnerToast.error("Failed to disable 2FA");
+    }
   };
 
   const initials = fullName
@@ -148,16 +200,20 @@ const Profile = () => {
                 </div>
                 <h2 className="text-xl font-bold mb-1">{fullName || "User"}</h2>
                 <p className="text-sm text-muted-foreground mb-2">{email}</p>
+                {profile?.two_factor_enabled && (
+                  <Badge className="bg-success text-success-foreground"><Shield className="h-3 w-3 mr-1" />2FA Enabled</Badge>
+                )}
               </div>
             </CardContent>
           </Card>
 
           <div className="md:col-span-2">
             <Tabs defaultValue="personal" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="personal">Personal Info</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="personal">Personal</TabsTrigger>
                 <TabsTrigger value="address">Address</TabsTrigger>
                 <TabsTrigger value="security">Security</TabsTrigger>
+                <TabsTrigger value="2fa">2FA</TabsTrigger>
               </TabsList>
 
               <TabsContent value="personal">
@@ -231,6 +287,57 @@ const Profile = () => {
                       </div>
                       <Button type="submit" className="w-full">Change Password</Button>
                     </form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="2fa">
+                <Card className="shadow-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" />Two-Factor Authentication</CardTitle>
+                    <CardDescription>Add extra security to your account with email-based 2FA</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {profile?.two_factor_enabled ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-success/10 rounded-lg">
+                          <Shield className="h-5 w-5 text-success" />
+                          <div>
+                            <p className="font-medium">2FA is enabled</p>
+                            <p className="text-sm text-muted-foreground">Your account is protected with email verification codes</p>
+                          </div>
+                        </div>
+                        <Button variant="destructive" onClick={handleDisable2FA}>Disable 2FA</Button>
+                      </div>
+                    ) : show2FAInput ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">Enter the 6-digit code sent to your email:</p>
+                        <Input
+                          value={twoFactorCode}
+                          onChange={(e) => setTwoFactorCode(e.target.value)}
+                          placeholder="123456"
+                          maxLength={6}
+                          className="text-center text-2xl tracking-widest"
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={handleVerify2FA} disabled={verifying2FA || twoFactorCode.length !== 6} className="flex-1">
+                            {verifying2FA ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Verify & Enable
+                          </Button>
+                          <Button variant="outline" onClick={() => { setShow2FAInput(false); setTwoFactorCode(""); }}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          Enable two-factor authentication to add an extra layer of security. We'll send a verification code to your email when you sign in.
+                        </p>
+                        <Button onClick={handleSend2FACode} disabled={sending2FA}>
+                          {sending2FA ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
+                          Enable 2FA
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

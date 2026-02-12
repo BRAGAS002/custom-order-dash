@@ -5,3 +5,12 @@ verify_jwt = true
 
 [functions.send-message]
 verify_jwt = true
+
+[functions.send-2fa-code]
+verify_jwt = false
+
+[functions.ai-chatbot]
+verify_jwt = false
+
+[functions.generate-design]
+verify_jwt = false
