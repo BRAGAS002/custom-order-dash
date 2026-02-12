@@ -20,6 +20,7 @@ import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import OrderDetail from "./pages/OrderDetail";
+import SavedServices from "./pages/SavedServices";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/saved" element={<ProtectedRoute><SavedServices /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
