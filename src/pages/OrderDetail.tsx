@@ -3,10 +3,11 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, CreditCard, MessageSquare, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, MessageSquare, Loader2, Zap, Calendar } from "lucide-react";
 import QRCode from "react-qr-code";
 import { OrderChat } from "@/components/chat/OrderChat";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { OrderActions } from "@/components/orders/OrderActions";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -133,6 +134,22 @@ const OrderDetail = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Rush & Schedule info */}
+                  {(order.rush_type && order.rush_type !== "standard") && (
+                    <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg">
+                      <Zap className="h-4 w-4 text-warning" />
+                      <span className="text-sm font-medium capitalize">{order.rush_type} Order</span>
+                      {Number(order.rush_fee) > 0 && <span className="text-sm text-muted-foreground">(+₱{Number(order.rush_fee).toLocaleString()} rush fee)</span>}
+                    </div>
+                  )}
+                  {order.scheduled_date && (
+                    <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span className="text-sm">Scheduled: {new Date(order.scheduled_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center pt-4 border-t">
                     <span className="font-semibold">Total</span>
                     <span className="text-2xl font-bold">₱{Number(order.total_amount).toLocaleString()}</span>
@@ -180,6 +197,9 @@ const OrderDetail = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Order Actions (cancel, confirm complete, design uploads) */}
+            <OrderActions order={order} />
 
             {/* Review section */}
             {canReview && (

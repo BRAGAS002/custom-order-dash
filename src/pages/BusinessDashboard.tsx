@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Package, TrendingUp, DollarSign, CheckCircle2,
-  Plus, Edit, Settings, QrCode, Loader2, Store, Save, UserPlus
+  Plus, Edit, Settings, QrCode, Loader2, Store, Save, UserPlus, Sliders
 } from "lucide-react";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
@@ -25,6 +25,8 @@ import {
   useUpdateOrderStatus, useCreateService, useToggleServiceStatus, useUpdateShop,
 } from "@/hooks/useBusinessData";
 import { useQueryClient } from "@tanstack/react-query";
+import { CustomizationManager } from "@/components/business/CustomizationManager";
+import { DocumentUpload } from "@/components/business/DocumentUpload";
 
 const ORDER_STATUSES = ["pending", "confirmed", "processing", "ready", "completed", "cancelled"];
 
@@ -37,6 +39,7 @@ export default function BusinessDashboard() {
   const [editingShop, setEditingShop] = useState(false);
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [walkInSubmitting, setWalkInSubmitting] = useState(false);
+  const [customizingService, setCustomizingService] = useState<{ id: string; name: string } | null>(null);
 
   const [newService, setNewService] = useState({
     name: "", description: "", base_price: 0, category: "",
@@ -348,13 +351,33 @@ export default function BusinessDashboard() {
                             {service.estimated_days && <span>{service.estimated_days}d turnaround</span>}
                           </div>
                         </div>
-                        <Switch checked={service.is_active ?? true} onCheckedChange={(checked) => toggleServiceStatus.mutate({ id: service.id, is_active: checked }, { onSuccess: () => toast.success(checked ? "Service activated" : "Service deactivated") })} />
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setCustomizingService({ id: service.id, name: service.name })}>
+                            <Sliders className="h-3 w-3 mr-1" />Options
+                          </Button>
+                          <Switch checked={service.is_active ?? true} onCheckedChange={(checked) => toggleServiceStatus.mutate({ id: service.id, is_active: checked }, { onSuccess: () => toast.success(checked ? "Service activated" : "Service deactivated") })} />
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : <p className="text-center text-muted-foreground py-8">No services yet. Add your first service to start receiving orders!</p>}
               </CardContent>
             </Card>
+
+            {/* Customization Manager Dialog */}
+            {customizingService && (
+              <Card className="shadow-card mt-4">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2"><Sliders className="h-5 w-5" />Manage Options</CardTitle>
+                    <Button variant="outline" size="sm" onClick={() => setCustomizingService(null)}>Close</Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <CustomizationManager serviceId={customizingService.id} serviceName={customizingService.name} />
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Settings */}
@@ -419,6 +442,14 @@ export default function BusinessDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Document Verification */}
+            <DocumentUpload
+              shopId={shop.id}
+              currentDocuments={shop.business_documents}
+              verificationStatus={shop.verification_status}
+              onUpdate={() => queryClient.invalidateQueries({ queryKey: ["my-shop"] })}
+            />
           </TabsContent>
         </Tabs>
       </main>

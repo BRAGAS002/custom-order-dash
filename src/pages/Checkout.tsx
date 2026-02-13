@@ -8,12 +8,19 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Smartphone, Building2, Wallet, Banknote, Loader2, Tag, Truck, Store } from "lucide-react";
+import { Smartphone, Building2, Wallet, Banknote, Loader2, Tag, Truck, Store, Zap, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { getCartItems, getCartItemTotal, getCartTotal, clearCart, type CartItem } from "@/lib/cart";
+
+const RUSH_OPTIONS = [
+  { value: "standard", label: "Standard", desc: "Regular turnaround time", fee: 0 },
+  { value: "express", label: "Express", desc: "Priority processing (+₱50)", fee: 50 },
+  { value: "rush", label: "Rush", desc: "Fast-tracked order (+₱100)", fee: 100 },
+  { value: "same_day", label: "Same Day", desc: "Completed today (+₱200)", fee: 200 },
+];
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -26,6 +33,8 @@ const Checkout = () => {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountApplied, setDiscountApplied] = useState(false);
   const [applyingDiscount, setApplyingDiscount] = useState(false);
+  const [rushType, setRushType] = useState("standard");
+  const [scheduledDate, setScheduledDate] = useState("");
 
   // Contact fields
   const [firstName, setFirstName] = useState("");
@@ -41,8 +50,9 @@ const Checkout = () => {
     if (user?.email) setEmail(user.email);
   }, [user]);
 
+  const rushFee = RUSH_OPTIONS.find((r) => r.value === rushType)?.fee ?? 0;
   const subtotal = getCartTotal(cartItems);
-  const total = Math.max(0, subtotal - discountAmount);
+  const total = Math.max(0, subtotal - discountAmount + rushFee);
 
   // Group items by shop for creating separate orders
   const shopGroups = cartItems.reduce<Record<string, CartItem[]>>((groups, item) => {
@@ -125,7 +135,7 @@ const Checkout = () => {
     try {
       // Create one order per shop
       for (const [shopId, items] of Object.entries(shopGroups)) {
-        const shopTotal = items.reduce((s, item) => s + getCartItemTotal(item), 0);
+        const shopTotal = items.reduce((s, item) => s + getCartItemTotal(item), 0) + rushFee;
         const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
         const { data: order, error: orderError } = await supabase
@@ -145,6 +155,9 @@ const Checkout = () => {
             payment_method: paymentMethod,
             fulfillment_type: fulfillmentType,
             discount_amount: discountAmount > 0 ? discountAmount : 0,
+            rush_type: rushType,
+            rush_fee: rushFee,
+            scheduled_date: scheduledDate || null,
             notes: notes || null,
             order_status: "pending",
             payment_status: paymentMethod === "cash" ? "pending" : "pending",
@@ -291,6 +304,40 @@ const Checkout = () => {
                 </CardContent>
               </Card>
 
+              {/* Rush Options */}
+              <Card className="shadow-card">
+                <CardHeader><CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5" />Rush Options</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <RadioGroup value={rushType} onValueChange={setRushType} className="space-y-2">
+                    {RUSH_OPTIONS.map((opt) => (
+                      <div key={opt.value} className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-smooth ${rushType === opt.value ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}>
+                        <RadioGroupItem value={opt.value} id={`rush-${opt.value}`} />
+                        <Label htmlFor={`rush-${opt.value}`} className="flex items-center justify-between cursor-pointer flex-1">
+                          <div>
+                            <p className="font-medium">{opt.label}</p>
+                            <p className="text-sm text-muted-foreground">{opt.desc}</p>
+                          </div>
+                          {opt.fee > 0 && <Badge variant="secondary">+₱{opt.fee}</Badge>}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduledDate" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" /> Preferred Date (Optional)
+                    </Label>
+                    <Input
+                      id="scheduledDate"
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Payment */}
               <Card className="shadow-card">
                 <CardHeader><CardTitle>Payment Method</CardTitle></CardHeader>
@@ -385,11 +432,15 @@ const Checkout = () => {
                         <span>-₱{discountAmount.toLocaleString()}</span>
                       </div>
                     )}
+                    {rushFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Rush Fee ({RUSH_OPTIONS.find(r => r.value === rushType)?.label})</span>
+                        <span>+₱{rushFee.toLocaleString()}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Fulfillment</span>
-                      <span className="text-success">
-                        {fulfillmentType === "pickup" ? "Free" : "Free"}
-                      </span>
+                      <span className="text-success">Free</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between text-lg font-bold">
